@@ -1,0 +1,6 @@
+.sliding-pane__overlay {
+  z-index: 1000;
+}
+.sliding-pane__content {
+  z-index: 1001;
+}
