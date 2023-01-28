@@ -8,42 +8,39 @@ export const chatApiSlice = apiSlice.injectEndpoints({
       keepUnusedDataFor: 0,
     }),
     getMessages: builder.query({
-      query: ({ conversationId }) =>
-        `/chat/message/${conversationId}?page=1&limit=10`,
-      transformResponse: (response, meta) => {
-        const totalCount = meta.response.headers.get("x-total-count");
-        return {
-          data: response,
-          totalCount,
-        };
-      },
-    }),
-    getMoreMessages: builder.query({
       query: ({ conversationId, page }) =>
         `/chat/message/${conversationId}?page=${page}&limit=10`,
-      async onQueryStarted(id, { queryFulfilled, dispatch }) {
-        try {
-          const messages = await queryFulfilled;
-          if (messages?.data?.length > 0) {
-            console.log(messages?.data?.length);
-            dispatch(
-              apiSlice.util.updateQueryData(
-                "getMessages",
-                {
-                  conversationId: messages?.data[0]?.conversation,
-                },
-                (draft) => {
-                  return {
-                    data: [...draft.data, ...messages.data],
-                    totalCount: Number(draft.totalCount),
-                  };
-                }
-              )
-            );
-          }
-        } catch (err) {
-          console.log("err", err);
+      // transformResponse: (response, meta) => {
+      //   const totalCount = meta.response.headers.get("x-total-count");
+      //   return {
+      //     data: response,
+      //     totalCount,
+      //   };
+      // },
+      // Only have one cache entry because the arg always maps to one string
+      serializeQueryArgs: ({ endpointName }) => {
+        return endpointName;
+      },
+      // Always merge incoming data to the cache entry
+      merge: (currentCache, newItems, { arg }) => {
+        // currentCache.results?.push(...newItems.results);
+        // currentCache.messages.push(...newItems.messages);
+        //push new messages to the end of the array and sort by date
+        if (arg.conversationId !== currentCache.messages[0]?.conversation) {
+          //if the conversationId is different from the current cache, replace the cache
+          currentCache.messages = newItems.messages;
+        } else {
+          currentCache.messages = [
+            ...currentCache.messages,
+            ...newItems.messages,
+          ].sort((a, b) => {
+            return new Date(a.createdAt) - new Date(b.createdAt);
+          });
         }
+      },
+      // Refetch when the page arg changes
+      forceRefetch({ currentArg, previousArg }) {
+        return currentArg !== previousArg;
       },
     }),
     sendMessage: builder.mutation({
@@ -62,8 +59,8 @@ export const chatApiSlice = apiSlice.injectEndpoints({
                 id.toString(),
                 (draft) => {
                   return {
-                    data: [...draft.data, message.data],
-                    totalCount: draft.totalCount + 1,
+                    ...draft,
+                    messages: [...draft.messages, message.data],
                   };
                 }
               )
@@ -79,8 +76,6 @@ export const chatApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useGetConversationsQuery,
-  useGetMoreMessagesQuery,
-  useLazyGetMoreMessagesQuery,
   useGetMessagesQuery,
   useSendMessageMutation,
 } = chatApiSlice;

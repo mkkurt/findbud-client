@@ -3,22 +3,22 @@ import { createSlice } from "@reduxjs/toolkit";
 const chatSlice = createSlice({
   name: "chat",
   initialState: {
-    messages: [],
     currentConv: null,
+    page: 1,
   },
   reducers: {
-    setMessages: (state, action) => {
-      state.messages = action.payload;
-    },
     setCurrentConv: (state, action) => {
       state.currentConv = action.payload;
+    },
+    setPage: (state, action) => {
+      state.page = action.payload;
     },
   },
 });
 
-export const { setMessages, setCurrentConv } = chatSlice.actions;
+export const { setCurrentConv, setPage } = chatSlice.actions;
 
 export default chatSlice.reducer;
 
-export const selectMessages = (state) => state.chat.messages;
 export const selectCurrentConv = (state) => state.chat.currentConv;
+export const selectPage = (state) => state.chat.page;

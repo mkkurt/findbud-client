@@ -1,145 +1,135 @@
-import InfiniteScroll from "react-infinite-scroller";
+// import InfiniteScroll from "react-infinite-scroller";
+import InfiniteScroll from "react-infinite-scroll-component";
 import { Message } from "./Message";
 import { selectCurrentUser } from "../../../features/auth/authSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import styled from "@emotion/styled";
 import {
   selectCurrentConv,
-  selectMessages,
-  setCurrentConv,
+  selectPage,
+  setPage,
 } from "../../../features/chat/chatSlice";
 import {
-  chatApiSlice,
   useGetMessagesQuery,
-  useLazyGetMoreMessagesQuery,
   useSendMessageMutation,
 } from "../../../features/chat/chatApiSlice";
-import axios from "axios";
 
 export const Messages = () => {
   const currentConv = useSelector(selectCurrentConv);
   const { userId } = useSelector(selectCurrentUser);
 
   const [message, setMessage] = useState("");
-  const messagesEndRef = useRef(null);
-
-  const { data, isLoading, isError, error } =
-    useGetMessagesQuery(
-      { conversationId: currentConv?._id },
-      { skip: !currentConv }
-    ) || {};
-
-  const { data: messages, totalCount } = data || {};
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   const dispatch = useDispatch();
-
-  const [page, setPage] = useState(1);
+  const page = useSelector(selectPage);
   const [hasMore, setHasMore] = useState(true);
-  const [trigger, result, lastPromiseInfo] = useLazyGetMoreMessagesQuery();
 
-  const fetchMore = () => {
-    setPage((prev) => prev + 1);
-  };
-
-  const getMoreMessages = async (page) => {
-    if (!result.isLoading) {
-      await trigger({
+  const { data, error, isFetching, isLoading, isError, isSuccess } =
+    useGetMessagesQuery(
+      {
         conversationId: currentConv?._id,
         page,
-      }).unwrap();
-      const more = result?.data?.totalCount - messages?.length > 0;
+      },
+      {
+        skip: !currentConv,
+      }
+    );
+
+  const { messages, totalMessages } = data || {};
+
+  const [
+    sendMessage,
+    {
+      isLoading: sendMessageIsLoading,
+      isError: sendMessageIsError,
+      error: sendMessageError,
+    },
+  ] = useSendMessageMutation();
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (message) {
+      sendMessage({
+        conversationId: currentConv._id,
+        text: message,
+      });
+      setMessage("");
+    }
+  };
+
+  const loadMore = () => {
+    if (!isFetching && !isLoading && !isError) {
+      dispatch(setPage(page + 1));
+    }
+    if (totalMessages > 0) {
+      const more = Math.ceil(totalMessages / 10) > page;
+      console.log(Math.ceil(totalMessages / 10), page);
       setHasMore(more);
-      // if (totalCount > 0) {
-      //   const more = Math.ceil(totalCount / 10) > page;
-      //   console.log(more);
-      //   setHasMore(more);
-      // }
     }
   };
 
   useEffect(() => {
-    const more = result?.data?.totalCount > page * 10;
-    if (more) {
-      getMoreMessages(page);
+    if (totalMessages > 0) {
+      const more = Math.ceil(totalMessages / 10) > page;
+      console.log(Math.ceil(totalMessages / 10), page);
+      setHasMore(more);
     }
-  }, [page]);
+  }, [totalMessages, page]);
 
-  // useEffect(() => {
-  //   console.log(messages);
-  //   if (messages?.length > 0) {
-  //     setHasMore(true);
-  //   }
-  // }, [messages]);
-
-  // decide what to render
   let content = null;
-
-  if (isLoading) {
-    content = <div>Loading...</div>;
-  } else if (!isLoading && isError) {
-    content = (
-      <div>
-        <div>Error: {error.data?.message}</div>
-      </div>
-    );
-  } else if (!isLoading && !isError && messages?.length === 0) {
-    content = <div>No messages found!</div>;
-  } else if (!isLoading && !isError && messages?.length > 0) {
-    content = (
-      <div>
-        <InfiniteScroll
-          pageStart={0}
-          hasMore={hasMore}
-          loadMore={fetchMore}
-          isReverse={true}
-          loader={<h4>Loading...</h4>}
-          useWindow={false}
-        >
-          <ul className="space-y-2">
-            {messages && messages.length > 0
-              ? messages
-                  .slice()
-                  .sort((a, b) => a.createdAt - b.createdAt)
-                  .map((message) => (
-                    <div ref={messagesEndRef} key={message._id}>
-                      <Message
-                        key={message._id}
-                        message={message}
-                        own={message.sender._id === userId}
-                      />
-                    </div>
-                  ))
-              : null}
-          </ul>
-        </InfiniteScroll>
-      </div>
-    );
-  }
+  content = (
+    <div
+      id="scrollableDiv"
+      style={{
+        height: "calc(100vh - 200px)",
+        overflow: "auto",
+        display: "flex",
+        flexDirection: "column-reverse",
+      }}
+    >
+      <InfiniteScroll
+        dataLength={messages?.length || page * 10}
+        // dataLength={page * 10}
+        hasMore={hasMore}
+        next={loadMore}
+        inverse={true}
+        loader={<h4>Loading...</h4>}
+        useWindow={false}
+        scrollableTarget="scrollableDiv"
+        style={{ display: "flex", flexDirection: "column-reverse" }} //To put endMessage and loader to the top.
+      >
+        <ul className="space-y-2">
+          {messages &&
+            messages
+              .slice()
+              .sort((a, b) => a.createdAt - b.createdAt)
+              .map((message) => (
+                <div key={message._id}>
+                  <Message
+                    key={message._id}
+                    message={message}
+                    own={message.sender._id === userId}
+                  />
+                </div>
+              ))}
+        </ul>
+      </InfiniteScroll>
+    </div>
+  );
+  // }
   return (
     <ChatBox>
       <ChatBoxWrapper>
-        <div
-          style={{
-            height: "calc(100vh - 197px)",
-            overflow: "auto",
-          }}
-        >
-          {content}
-        </div>
+        {content}
         <ChatBoxBottom>
           <ChatBoxTextArea
             placeholder="Type a message..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />
-          <ChatBoxSubmit onClick={() => console.log("send message")}>
-            Send
-          </ChatBoxSubmit>
+          <ChatBoxSubmit onClick={handleSubmit}>Send</ChatBoxSubmit>
+          {sendMessageIsLoading && <p>Sending...</p>}
+          {sendMessageIsError && <p>{sendMessageError.data?.message}</p>}
         </ChatBoxBottom>
       </ChatBoxWrapper>
     </ChatBox>

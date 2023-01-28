@@ -1,14 +1,16 @@
 import styled from "@emotion/styled";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../../features/auth/authSlice";
+import { selectCurrentConv } from "../../../features/chat/chatSlice";
 
 export const Conversation = ({ conversation }) => {
   const { _id, members } = conversation;
   const { userId } = useSelector(selectCurrentUser);
+  const currentConv = useSelector(selectCurrentConv);
   //filter out the current user
   const otherUser = members.filter((member) => member._id !== userId)[0];
   return (
-    <ConversationWrapper>
+    <ConversationWrapper active={currentConv?._id === _id}>
       <ConversationImage
         //profile picture or default image
         src={
@@ -31,6 +33,7 @@ const ConversationWrapper = styled.div`
   &:hover {
     background-color: #f5f5f5;
   }
+  background-color: ${(props) => (props.active ? "#dcf8c6" : "white")};
 `;
 const ConversationImage = styled.img`
   width: 50px;

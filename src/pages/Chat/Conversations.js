@@ -3,6 +3,8 @@ import { useGetConversationsQuery } from "../../features/chat/chatApiSlice";
 import {
   selectCurrentConv,
   setCurrentConv,
+  setPage,
+  selectPage,
 } from "../../features/chat/chatSlice";
 import { Conversation } from "../../components/Chat/conversations/Conversation";
 import { useDispatch, useSelector } from "react-redux";
@@ -26,6 +28,7 @@ export const Conversations = () => {
 
   const handleClick = (conversation) => {
     dispatch(setCurrentConv(conversation));
+    dispatch(setPage(1));
   };
   return (
     <div>
