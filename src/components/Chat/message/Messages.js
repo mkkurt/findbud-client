@@ -3,120 +3,122 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import { Message } from "./Message";
 import { selectCurrentUser } from "../../../features/auth/authSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import styled from "@emotion/styled";
-import {
-  selectCurrentConv,
-  selectPage,
-  setPage,
-} from "../../../features/chat/chatSlice";
-import {
-  useGetMessagesQuery,
-  useSendMessageMutation,
-} from "../../../features/chat/chatApiSlice";
+import { selectCurrentConv } from "../../../features/chat/chatSlice";
+import { useInfiniteQuery, useMutation, useQueryClient } from "react-query";
+import axios from "axios";
 
 export const Messages = () => {
   const currentConv = useSelector(selectCurrentConv);
-  const { userId } = useSelector(selectCurrentUser);
+  const { userId, accessToken } = useSelector(selectCurrentUser);
+  const queryClient = useQueryClient();
 
   const [message, setMessage] = useState("");
 
-  const dispatch = useDispatch();
-  const page = useSelector(selectPage);
-  const [hasMore, setHasMore] = useState(true);
-
-  const { data, error, isFetching, isLoading, isError, isSuccess } =
-    useGetMessagesQuery(
-      {
-        conversationId: currentConv?._id,
-        page,
+  //send message mutation
+  const sendMessageMutation = useMutation(
+    (body) =>
+      axios.post("/chat/message", body, {
+        headers: {
+          Authorization: "Bearer " + accessToken,
+        },
+      }),
+    {
+      onSuccess: () => {
+        setMessage("");
+        queryClient.invalidateQueries("messages");
       },
+    }
+  );
+
+  const sendMessage = (e) => {
+    e.preventDefault();
+    sendMessageMutation.mutate({
+      conversationId: currentConv._id,
+      text: message,
+    });
+  };
+  /////////////////////////////////////////////////
+  const fetchMessages = async ({ pageParam = 1 }) =>
+    await axios.get(
+      "/chat/message/" + currentConv?._id + "?page=" + pageParam + "&limit=10",
       {
-        skip: !currentConv,
+        headers: {
+          Authorization: "Bearer " + accessToken,
+        },
       }
     );
 
-  const { messages, totalMessages } = data || {};
-
-  const [
-    sendMessage,
-    {
-      isLoading: sendMessageIsLoading,
-      isError: sendMessageIsError,
-      error: sendMessageError,
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isFetchingNextPage,
+    status,
+    refetch,
+  } = useInfiniteQuery("messages", fetchMessages, {
+    getNextPageParam: (lastPage, pages) => {
+      const total = lastPage.data.totalMessages;
+      if (pages.length * 10 >= total) {
+        return;
+      } else {
+        return pages.length + 1;
+      }
     },
-  ] = useSendMessageMutation();
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (message) {
-      sendMessage({
-        conversationId: currentConv._id,
-        text: message,
-      });
-      setMessage("");
-    }
-  };
-
-  const loadMore = () => {
-    if (!isFetching && !isLoading && !isError) {
-      dispatch(setPage(page + 1));
-    }
-    if (totalMessages > 0) {
-      const more = Math.ceil(totalMessages / 10) > page;
-      console.log(Math.ceil(totalMessages / 10), page);
-      setHasMore(more);
-    }
-  };
-
-  useEffect(() => {
-    if (totalMessages > 0) {
-      const more = Math.ceil(totalMessages / 10) > page;
-      console.log(Math.ceil(totalMessages / 10), page);
-      setHasMore(more);
-    }
-  }, [totalMessages, page]);
+    enabled: currentConv !== null && currentConv !== undefined,
+  });
 
   let content = null;
-  content = (
-    <div
-      id="scrollableDiv"
-      style={{
-        height: "calc(100vh - 200px)",
-        overflow: "auto",
-        display: "flex",
-        flexDirection: "column-reverse",
-      }}
-    >
-      <InfiniteScroll
-        dataLength={messages?.length || page * 10}
-        // dataLength={page * 10}
-        hasMore={hasMore}
-        next={loadMore}
-        inverse={true}
-        loader={<h4>Loading...</h4>}
-        useWindow={false}
-        scrollableTarget="scrollableDiv"
-        style={{ display: "flex", flexDirection: "column-reverse" }} //To put endMessage and loader to the top.
+
+  useEffect(() => {
+    if (currentConv) {
+      refetch();
+    }
+  }, [currentConv]);
+
+  if (status === "loading") {
+    content = <p>Loading...</p>;
+  } else if (status === "error") {
+    content = <p>Error: {error.message}</p>;
+  } else if (data?.pages[0]) {
+    content = (
+      <div
+        id="scrollableDiv"
+        style={{
+          height: "calc(100vh - 200px)",
+          overflow: "auto",
+          display: "flex",
+          flexDirection: "column-reverse",
+        }}
       >
-        <ul className="space-y-2">
-          {messages &&
-            messages
-              .slice()
-              .sort((a, b) => a.createdAt - b.createdAt)
-              .map((message) => (
-                <div key={message._id}>
-                  <Message
-                    key={message._id}
-                    message={message}
-                    own={message.sender._id === userId}
-                  />
-                </div>
-              ))}
-        </ul>
-      </InfiniteScroll>
-    </div>
-  );
-  // }
+        <InfiniteScroll
+          dataLength={data.pages.length}
+          hasMore={hasNextPage}
+          next={fetchNextPage}
+          inverse={true}
+          loader={<h4>Loading...</h4>}
+          useWindow={false}
+          scrollableTarget="scrollableDiv"
+          style={{ display: "flex", flexDirection: "column-reverse" }} //To put endMessage and loader to the top.
+        >
+          {data.pages.map((page, i) => {
+            return page.data.messages.map((message, m) => {
+              return (
+                <Message
+                  key={message._id}
+                  message={message}
+                  own={message.sender._id === userId}
+                />
+              );
+            });
+          })}
+        </InfiniteScroll>
+      </div>
+    );
+  }
   return (
     <ChatBox>
       <ChatBoxWrapper>
@@ -127,9 +129,9 @@ export const Messages = () => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />
-          <ChatBoxSubmit onClick={handleSubmit}>Send</ChatBoxSubmit>
-          {sendMessageIsLoading && <p>Sending...</p>}
-          {sendMessageIsError && <p>{sendMessageError.data?.message}</p>}
+          <ChatBoxSubmit onClick={sendMessage}>Send</ChatBoxSubmit>
+          {sendMessageMutation.isLoading && <p>Sending...</p>}
+          {sendMessageMutation.isError && <p>{sendMessageMutation.error}</p>}
         </ChatBoxBottom>
       </ChatBoxWrapper>
     </ChatBox>
