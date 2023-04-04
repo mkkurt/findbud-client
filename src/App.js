@@ -3,6 +3,7 @@ import Layout from "./components/Layout";
 import Public from "./components/Public";
 import Signin from "./features/auth/Signin";
 import Signup from "./features/auth/Signup";
+import Welcome from "./pages/Welcome";
 import Home from "./pages/Home";
 import RequireAuth from "./features/auth/RequireAuth";
 import AnonymousRoute from "./features/auth/AnonymousRoute";
@@ -24,8 +25,11 @@ function App() {
       <Route path="/" element={<Layout />}>
         {/* public routes */}
         {/* <Route index element={<Public />} /> */}
+        <Route path="buddies/services" element={<BuddiesWithServices />} />
+        <Route path="buddy/*" element={<BuddyRoute />} />
         {/* anonymous routes */}
         <Route element={<AnonymousRoute />}>
+          <Route path="/landing" element={<Welcome />} />
           <Route path="signin" element={<Signin />} />
           <Route path="signup" element={<Signup />} />
         </Route>
@@ -37,8 +41,6 @@ function App() {
           <Route path="becomebuddy" element={<BecomeBuddy />} />
           <Route path="orders" element={<OrdersList />} />
           <Route path="services/*" element={<ServicesRoute />} />
-          <Route path="buddy/*" element={<BuddyRoute />} />
-          <Route path="buddies/services" element={<BuddiesWithServices />} />
           <Route path="orders/:orderId/pay" element={<OrderPay />} />
           <Route path="orders/:orderId/status" element={<OrderStatus />} />
         </Route>

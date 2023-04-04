@@ -1,9 +1,8 @@
 import React from "react";
-import { Nav, NavLink, NavMenu } from "./NavbarElements";
+import { Nav, NavLink, NavMenu, NavLogo } from "./NavbarElements";
 import { selectCurrentUser } from "../features/auth/authSlice";
 import { useSelector } from "react-redux";
 import { ROLES_LIST } from "../config/roles_list";
-import { Logout } from "../features/auth/Logout";
 
 const Navbar = () => {
   const currentUser = useSelector(selectCurrentUser);
@@ -12,6 +11,10 @@ const Navbar = () => {
   if (currentUser) {
     return (
       <Nav>
+        <NavLogo to="/landing">
+          <span>Coop</span>
+          <span style={{ color: "#9300FF" }}>ZONE</span>
+        </NavLogo>
         <NavMenu>
           <NavLink to="/">Home</NavLink>
           <NavLink to="/profile">Profile</NavLink>
@@ -24,13 +27,16 @@ const Navbar = () => {
               <NavLink to="/orders">Your Orders</NavLink>
             </>
           )}
-          <Logout />
         </NavMenu>
       </Nav>
     );
   } else {
     return (
       <Nav>
+        <NavLogo to="/landing">
+          <span>Coop</span>
+          <span style={{ color: "#9300FF" }}>ZONE</span>
+        </NavLogo>
         <NavMenu>
           <NavLink to="/signin">Sign In</NavLink>
           <NavLink to="/signup">Sign Up</NavLink>

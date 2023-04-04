@@ -64,6 +64,7 @@ export const BecomeBuddy = () => {
     formData.append("businessName", businessName);
     formData.append("type", "company");
     formData.append("profilePic", img);
+    formData.append("bio", bio);
     //encode image file to base64 string
     try {
       const userData = await becomeBuddy(formData).unwrap();

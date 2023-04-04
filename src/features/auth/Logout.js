@@ -21,6 +21,16 @@ export const Logout = () => {
   return isLoading ? (
     <h1>Loading...</h1>
   ) : (
-    <button onClick={handleLogout}>Logout</button>
+    <button
+      style={{
+        background: "none",
+        border: "1px solid black",
+        padding: "5px 10px",
+        borderRadius: "5px",
+      }}
+      onClick={handleLogout}
+    >
+      Logout
+    </button>
   );
 };

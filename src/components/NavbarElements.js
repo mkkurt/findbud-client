@@ -9,14 +9,15 @@ export const Nav = styled.nav`
   top: 0;
   left: 0;
   right: 0;
-  height: 40px;
+  height: 4rem;
   display: flex;
   align-items: center;
-  background-color: #f5f5f5;
+  justify-content: space-between;
+  background-color: black;
 `;
 
 export const NavLink = styled(Link)`
-  color: #808080;
+  color: white;
   display: flex;
   align-items: center;
   text-decoration: none;
@@ -30,12 +31,18 @@ export const NavLink = styled(Link)`
 
 export const NavMenu = styled.div`
   display: flex;
-  margin-right: -24px;
-  /* Second Nav */
-  /* margin-right: 24px; */
-  /* Third Nav */
   white-space: nowrap;
-  */ @media screen and (max-width: 768px) {
-    display: none;
+  align-items: center;
   }
+`;
+
+export const NavLogo = styled(Link)`
+  color: #808080;
+  justify-self: flex-start;
+  cursor: pointer;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  margin-left: 24px;
+  text-decoration: none;
 `;

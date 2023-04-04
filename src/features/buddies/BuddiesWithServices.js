@@ -3,7 +3,10 @@ import { useGetBuddiesWithServicesQuery } from "./buddiesApiSlice";
 import { useNavigate } from "react-router-dom";
 
 export const BuddiesWithServices = () => {
-  const { data, error, isLoading, isError } = useGetBuddiesWithServicesQuery();
+  const { data, error, isLoading, isError } = useGetBuddiesWithServicesQuery({
+    page: 1,
+    limit: 10,
+  });
   const navigate = useNavigate();
 
   const handleCardClick = (buddyId) => {
@@ -14,7 +17,12 @@ export const BuddiesWithServices = () => {
     });
   };
   return (
-    <div style={{ padding: "20px" }}>
+    <div
+      style={{
+        padding: "20px",
+        width: "100%",
+      }}
+    >
       {isLoading ? (
         <div>Loading...</div>
       ) : isError ? (

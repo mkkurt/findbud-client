@@ -59,7 +59,14 @@ const Signup = () => {
   const content = SignupIsLoading ? (
     <h1>Loading...</h1>
   ) : (
-    <section className="signup">
+    <section
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: "50%",
+        margin: "auto",
+      }}
+    >
       <p
         ref={errRef}
         className={errMsg ? "errmsg" : "offscreen"}

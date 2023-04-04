@@ -27,6 +27,8 @@ const Home = () => {
           width: "100%",
           height: "100vh",
           justifyContent: "space-between",
+          backgroundColor: "#03001C",
+          color: "white",
         }}
       >
         <section style={{ display: "flex", flexDirection: "column" }}>

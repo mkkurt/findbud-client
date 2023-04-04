@@ -63,6 +63,8 @@ const Signin = () => {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
+        backgroundColor: "lightgray",
+        height: "calc(100vh - 3rem)",
       }}
     >
       <p
@@ -99,7 +101,6 @@ const Signin = () => {
           required
         />
         <button>Sign In</button>
-        <Link to="/signup">Sign Up</Link>
       </form>
     </section>
   );

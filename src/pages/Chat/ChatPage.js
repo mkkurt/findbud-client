@@ -15,11 +15,11 @@ const ChatPage = () => {
       </ChatMenu>
       <Messages />
       <ChatUsersContainer>
-        <ChatUsersWrapper>
+        {/* <ChatUsersWrapper>
           <ChatUser />
           <ChatUser />
           <ChatUser />
-        </ChatUsersWrapper>
+        </ChatUsersWrapper> */}
       </ChatUsersContainer>
     </ChatPageWrapper>
   );
